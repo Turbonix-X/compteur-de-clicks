@@ -1,0 +1,195 @@
+/* ===== Compteur de Clicks — styles propres au site (le reste est dans turbonix.css) ===== */
+
+/* ---------- La zone de clicks ---------- */
+
+.click-zone {
+  height: 360px;
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  color: var(--white);
+  outline: none;
+}
+.click-zone:focus-visible { box-shadow: 0 0 0 4px var(--mauve-soft), inset 0 0 0 2px var(--mauve); }
+.click-zone::after { top: 50%; }
+/* Pendant un test, plus de défilement ni de zoom quand on tape sur la zone */
+body.busy .click-zone { touch-action: none; cursor: crosshair; }
+.click-zone.armed { border-color: var(--yellow); }
+
+.hud {
+  position: absolute;
+  top: 16px;
+  left: 18px;
+  right: 18px;
+  display: flex;
+  justify-content: space-between;
+  pointer-events: none;
+  z-index: 1;
+}
+.hud-item { display: flex; flex-direction: column; }
+.hud-item.right { align-items: flex-end; }
+.hud-value {
+  font-size: 1.6rem;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.5px;
+  line-height: 1.1;
+}
+.hud-label { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 1px; color: #c9c6d6; }
+.hud-item:first-child .hud-value { color: var(--yellow); text-shadow: 0 0 14px rgba(255, 214, 10, 0.5); }
+
+.zone-center {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  pointer-events: none;
+  padding: 60px 16px 30px;
+  text-align: center;
+}
+.zone-count {
+  font-size: clamp(4rem, 14vw, 8rem);
+  font-weight: 900;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -2px;
+  text-shadow: 0 0 30px rgba(155, 109, 255, 0.7), 0 4px 0 rgba(0, 0, 0, 0.3);
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+.zone-count.countdown { color: var(--yellow); text-shadow: 0 0 30px rgba(255, 214, 10, 0.7); }
+.zone-msg { font-weight: 700; font-size: 1.05rem; color: #e6e3f0; }
+.click-zone.armed .zone-msg { color: var(--yellow); }
+
+/* Barre de progression du temps, en bas de la zone */
+.zone-progress {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.08);
+}
+.zone-progress span {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, var(--mauve), var(--yellow));
+  box-shadow: 0 0 12px rgba(255, 214, 10, 0.5);
+  transform: scaleX(0);
+  transform-origin: left;
+}
+
+/* Onde à l'endroit du click */
+.click-ripple {
+  position: absolute;
+  width: 46px;
+  height: 46px;
+  margin: -23px 0 0 -23px;
+  border-radius: 50%;
+  border: 2px solid var(--yellow);
+  pointer-events: none;
+  opacity: 0;
+}
+.click-ripple.alt { border-color: var(--mauve-light); }
+
+.click-zone .banner span { white-space: nowrap; }
+
+.duration-presets { justify-content: center; margin: 4px 0 18px; }
+.divider h3 { margin-top: 0; }
+
+/* ---------- Réglages ---------- */
+
+.plain-set { border: none; min-width: 0; }
+.plain-set:disabled { opacity: 0.6; }
+.duration-row { align-items: center; }
+.unit-input { position: relative; display: block; }
+.unit-input input {
+  width: 92px;
+  padding: 10px 40px 10px 12px;
+  border: 1.5px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface-2);
+  font-weight: 700;
+  font-size: 1rem;
+  text-align: right;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.unit-input input.invalid { border-color: var(--error); animation: tx-shake 0.3s; }
+.unit-input span {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--muted);
+  font-size: 0.85rem;
+  font-weight: 600;
+  pointer-events: none;
+}
+#durationText { margin-top: 2px; }
+#durationText strong { color: var(--text); }
+.start-mode { width: 320px; max-width: 100%; margin-bottom: 12px; }
+.start-info { margin-bottom: 0; }
+.options { display: flex; flex-direction: column; gap: 12px; margin-bottom: 16px; }
+.options .switch { font-weight: 600; }
+
+/* ---------- Statistiques ---------- */
+
+.first-h3 { margin-top: 4px; }
+
+/* Petites barres verticales : la vitesse pendant le dernier test */
+.timeline {
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+  height: 120px;
+  padding: 8px;
+  border-radius: 14px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+}
+.timeline.empty { align-items: center; justify-content: center; font-size: 0.85rem; color: var(--muted); }
+.tl-bar {
+  flex: 1;
+  min-width: 0;
+  min-height: 2px;
+  border-radius: 4px 4px 2px 2px;
+  background: linear-gradient(180deg, var(--mauve-light), var(--mauve) 60%, var(--mauve-dark));
+  transform-origin: bottom;
+  animation: tl-grow 0.6s var(--ease) both;
+}
+.tl-bar.peak { background: linear-gradient(180deg, var(--yellow-light), var(--yellow) 60%, var(--yellow-dark)); box-shadow: 0 0 12px rgba(255, 214, 10, 0.5); }
+@keyframes tl-grow { from { transform: scaleY(0); } }
+.timeline-axis { display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--muted); margin: 4px 4px 0; }
+#timelineInfo { margin-top: 6px; }
+
+.compare-table tbody tr { cursor: pointer; }
+.compare-table td strong { font-weight: 800; }
+.records-empty { font-size: 0.88rem; }
+
+/* ---------- Divers ---------- */
+
+.file-btn { display: inline-flex; align-items: center; cursor: pointer; }
+.dialog .field-row { margin-bottom: 6px; }
+.challenge-switch { margin: 4px 0 12px; font-weight: 600; }
+
+/* ---------- Tablette et téléphone ---------- */
+
+@media (max-width: 560px) {
+  /* Le titre passe sur 2 lignes pour laisser toute la place aux boutons et au logo */
+  .site-title { white-space: normal; line-height: 1.1; min-width: 0; }
+  .header-right { flex-shrink: 0; }
+  .click-zone { height: 320px; }
+  .hud { top: 12px; left: 14px; right: 14px; }
+  .hud-value { font-size: 1.3rem; }
+  .unit-input input { width: 84px; }
+  .start-mode { width: 100%; }
+  .click-zone .banner span { white-space: nowrap; }
+
+.duration-presets { justify-content: flex-start; }
+}
