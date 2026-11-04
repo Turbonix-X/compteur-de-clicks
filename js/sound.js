@@ -144,7 +144,9 @@ const Haptics = (() => {
   let enabled = true;
   return {
     buzz(pattern) {
-      if (enabled && navigator.vibrate) {
+      // Le navigateur refuse de vibrer tant qu'on n'a pas encore touché la page
+      const touched = !navigator.userActivation || navigator.userActivation.hasBeenActive;
+      if (enabled && touched && navigator.vibrate) {
         try { navigator.vibrate(pattern); } catch (e) { /* non supporté */ }
       }
     },

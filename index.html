@@ -53,9 +53,13 @@
   </header>
 
   <main class="container">
-    <!-- ===== La zone de clicks ===== -->
+    <!-- ===== La zone de jeu ===== -->
     <section class="card full">
-      <div id="clickZone" class="stage-zone click-zone" role="button" tabindex="0" aria-label="Zone de clicks : clique ici le plus vite possible">
+      <div id="modeTabs" class="tabs mode-tabs" role="tablist" aria-label="Mode de jeu"></div>
+      <p id="modeDesc" class="muted small mode-desc"></p>
+
+      <div id="clickZone" class="stage-zone click-zone" role="group" tabindex="0" aria-label="Zone de jeu">
+        <div id="targetLayer" class="target-layer" aria-hidden="true"></div>
         <div class="hud">
           <div class="hud-item">
             <span id="timeLeft" class="hud-value">10</span>
@@ -63,29 +67,74 @@
           </div>
           <div class="hud-item right">
             <span id="liveCps" class="hud-value">0</span>
-            <span class="hud-label">clicks / s</span>
+            <span id="rightLabel" class="hud-label">CPS</span>
           </div>
         </div>
         <div class="zone-center">
-          <span id="clickCount" class="zone-count">0</span>
+          <span id="tapBtn" class="tap-btn">
+            <span id="clickCount" class="zone-count">0</span>
+            <span id="tapLabel" class="tap-label">clicks</span>
+          </span>
+          <div id="altRow" class="alt-row hidden"></div>
           <span id="zoneMsg" class="zone-msg">Clique ici pour démarrer</span>
         </div>
-        <div class="zone-progress" aria-hidden="true"><span id="progressFill"></span></div>
+        <div class="zone-progress" aria-hidden="true"><span id="progressFill"></span><i id="gaugeMark" class="gauge-mark hidden"></i></div>
       </div>
       <p id="result" class="result" aria-live="polite"></p>
 
-      <div id="durationPresets" class="presets duration-presets"></div>
+      <div id="quickPresets" class="presets quick-presets"></div>
 
       <div class="actions">
         <button id="startBtn" class="btn btn-primary">⏱️ Lancer</button>
         <button id="stopBtn" class="btn btn-ghost" disabled>⏹ Arrêter</button>
       </div>
-      <p class="hint">Astuces : <kbd>Espace</kbd> pour lancer · <kbd>Échap</kbd> pour arrêter · sur téléphone, tu peux taper avec plusieurs doigts en même temps : chaque doigt compte.</p>
+      <p id="modeHint" class="hint"></p>
 
       <div class="divider">
         <h3>10 derniers tests</h3>
         <ol id="recentList" class="recent-list"></ol>
       </div>
+    </section>
+
+    <!-- ===== Rang et succès ===== -->
+    <section class="card full">
+      <div class="card-head">
+        <h2>Ton rang</h2>
+        <span class="muted small">🔒 Rien que pour toi : rien n’est envoyé en ligne.</span>
+      </div>
+      <div class="profile-grid">
+        <div class="rank-now">
+          <span id="rankIcon" class="rank-icon" aria-hidden="true">🐌</span>
+          <div class="rank-text">
+            <span id="rankStep" class="result-label">Rang 1 sur 10</span>
+            <strong id="rankName" class="rank-name">Escargot</strong>
+            <span id="rankBest" class="muted small"></span>
+          </div>
+        </div>
+        <div class="rank-next">
+          <div class="bar-label"><span id="rankNextText"></span><small id="rankNextValue"></small></div>
+          <div class="bar"><div id="rankBar" class="bar-fill" style="width:0%"></div></div>
+        </div>
+        <div class="kpi lifetime">
+          <span id="lifetime" class="kpi-value">0</span>
+          <span class="kpi-label">clicks depuis le début</span>
+          <span class="muted lifetime-note">Se remet à zéro avec la 🗑 en haut de la page</span>
+        </div>
+      </div>
+      <ol id="rankLadder" class="rank-ladder"></ol>
+
+      <h3>Succès</h3>
+      <div id="achievements" class="achievements"></div>
+
+      <details class="help">
+        <summary>Comment ça marche ?</summary>
+        <ul>
+          <li><strong>CPS</strong> : clicks par seconde.</li>
+          <li><strong>Ton rang et tes succès</strong> se basent sur ta <em>meilleure pointe</em> : le plus de clicks réussis pendant une seule seconde, dans n’importe quel mode. Un test très court ne fausse donc pas le calcul.</li>
+          <li><strong>Turbo</strong>, le dernier rang, demande 50 CPS : c’est presque impossible à la main.</li>
+          <li><strong>Le compteur</strong> garde tous les clicks faits pendant les tests, même ceux d’un test arrêté.</li>
+        </ul>
+      </details>
     </section>
 
     <!-- ===== Réglages ===== -->
@@ -94,54 +143,127 @@
         <h2>Réglages</h2>
       </div>
       <fieldset id="settingsSet" class="plain-set">
-        <div class="field">
-          <label>Durée exacte du test <small>(de 0,1 s à 5 h)</small></label>
-          <div class="field-row wrap duration-row">
-            <label class="unit-input"><input id="durH" type="number" min="0" max="5" step="1" inputmode="numeric" aria-label="Heures"><span>h</span></label>
-            <label class="unit-input"><input id="durM" type="number" min="0" max="59" step="1" inputmode="numeric" aria-label="Minutes"><span>min</span></label>
-            <label class="unit-input"><input id="durS" type="number" min="0" max="59.9" step="0.1" inputmode="decimal" aria-label="Secondes"><span>s</span></label>
-            <button id="randDurBtn" type="button" class="icon-btn" title="Durée au hasard" aria-label="Durée au hasard">🎲</button>
+        <div id="panelGoal" class="panel hidden">
+          <div class="field">
+            <label for="goalInput">Nombre de clicks à faire <small>(2 à 1 000 000)</small></label>
+            <div class="field-row">
+              <input id="goalInput" type="number" min="2" max="1000000" step="1" inputmode="numeric">
+              <button id="randGoalBtn" type="button" class="icon-btn" title="Nombre au hasard" aria-label="Nombre de clicks au hasard">🎲</button>
+            </div>
           </div>
-          <p id="durationText" class="muted small"></p>
-          <p id="durationWarn" class="warn hidden"></p>
         </div>
 
-        <h3>Départ du chrono</h3>
-        <div id="startMode" class="pill-switch start-mode" data-active="0">
-          <span class="pill-indicator"></span>
-          <button type="button" data-mode="first" class="active">Au premier click</button>
-          <button type="button" data-mode="countdown">Compte à rebours</button>
+        <div id="panelTargets" class="panel hidden">
+          <div class="field slider-field">
+            <label for="levelInput">Difficulté <small>(niveau 1 à 100)</small></label>
+            <div class="slider-row">
+              <input id="levelRange" class="range" type="range" min="1" max="100" step="1" aria-label="Niveau de difficulté">
+              <input id="levelInput" class="mini-input" type="number" min="1" max="100" step="1" inputmode="numeric">
+            </div>
+          </div>
+          <div class="field slider-field">
+            <label for="sizeInput">Taille des cibles <small>(20 à 150 pixels)</small></label>
+            <div class="slider-row">
+              <input id="sizeRange" class="range" type="range" min="20" max="150" step="1" aria-label="Taille des cibles">
+              <input id="sizeInput" class="mini-input" type="number" min="20" max="150" step="1" inputmode="numeric">
+            </div>
+          </div>
+          <div class="field slider-field">
+            <label for="countInput">Cibles en même temps <small>(1 à 20)</small></label>
+            <div class="slider-row">
+              <input id="countRange" class="range" type="range" min="1" max="20" step="1" aria-label="Nombre de cibles en même temps">
+              <input id="countInput" class="mini-input" type="number" min="1" max="20" step="1" inputmode="numeric">
+            </div>
+          </div>
         </div>
-        <p id="startInfo" class="info start-info"></p>
+
+        <div id="panelAlt" class="panel hidden">
+          <div id="altInput" class="pill-switch alt-input" data-active="0">
+            <span class="pill-indicator"></span>
+            <button type="button" data-input="keys" class="active">⌨️ Clavier</button>
+            <button type="button" data-input="buttons">🔘 Boutons</button>
+          </div>
+          <div id="altKeysPanel">
+            <p class="field-title">Tes touches, dans l’ordre <small class="muted">(2 à 8)</small></p>
+            <div id="altKeys" class="key-list"></div>
+          </div>
+          <div id="altButtonsPanel" class="hidden">
+            <p class="field-title">Nombre de boutons <small class="muted">(2 à 8)</small></p>
+            <div id="altButtonCount" class="presets"></div>
+          </div>
+        </div>
+
+        <div id="panelEndurance" class="panel hidden">
+          <div class="field">
+            <label for="cpsInput">Vitesse à tenir <small>(1 à 100 CPS)</small></label>
+            <div class="field-row">
+              <input id="cpsInput" type="number" min="1" max="100" step="0.5" inputmode="decimal">
+            </div>
+          </div>
+          <p class="info">🔋 Tu as 2 secondes pour prendre ton rythme. Ensuite, on regarde sans arrêt tes 2 dernières secondes : si tu descends sous cette vitesse, c’est fini.</p>
+        </div>
+
+        <div id="panelDuration" class="panel">
+          <div class="field">
+            <label>Durée exacte <small>(de 0,1 s à 5 h)</small></label>
+            <div class="field-row wrap duration-row">
+              <label class="unit-input"><input id="durH" type="number" min="0" max="5" step="1" inputmode="numeric" aria-label="Heures"><span>h</span></label>
+              <label class="unit-input"><input id="durM" type="number" min="0" max="59" step="1" inputmode="numeric" aria-label="Minutes"><span>min</span></label>
+              <label class="unit-input"><input id="durS" type="number" min="0" max="59.9" step="0.1" inputmode="decimal" aria-label="Secondes"><span>s</span></label>
+              <button id="randDurBtn" type="button" class="icon-btn" title="Durée au hasard" aria-label="Durée au hasard">🎲</button>
+            </div>
+            <p id="durationText" class="muted small"></p>
+            <p id="durationWarn" class="warn hidden"></p>
+          </div>
+        </div>
+
+        <div id="panelStart" class="panel">
+          <h3>Départ du chrono</h3>
+          <div id="startMode" class="pill-switch start-mode" data-active="0">
+            <span class="pill-indicator"></span>
+            <button type="button" data-mode="first" class="active">Au premier click</button>
+            <button type="button" data-mode="countdown">Compte à rebours</button>
+          </div>
+          <p id="startInfo" class="info start-info"></p>
+        </div>
 
         <h3>Options</h3>
         <div class="options">
-          <label class="switch">
+          <label id="keyboardOption" class="switch">
             <input id="keyboardToggle" type="checkbox">
             <span class="switch-track"><span class="switch-thumb"></span></span>
             <span>Les touches du clavier comptent aussi</span>
           </label>
           <label class="switch">
-            <input id="effectsToggle" type="checkbox" checked>
+            <input id="rippleToggle" type="checkbox" checked>
             <span class="switch-track"><span class="switch-thumb"></span></span>
-            <span>Effets à chaque click (ondes et petits sons)</span>
+            <span>Petite onde à chaque click</span>
+          </label>
+          <label class="switch">
+            <input id="shakeToggle" type="checkbox" checked>
+            <span class="switch-track"><span class="switch-thumb"></span></span>
+            <span>Le bouton tremble quand tu cliques très vite</span>
+          </label>
+          <label class="switch">
+            <input id="clickSoundToggle" type="checkbox" checked>
+            <span class="switch-track"><span class="switch-thumb"></span></span>
+            <span>Petit son à chaque click</span>
           </label>
         </div>
-        <p class="info alt">⚡ Le compteur est fait pour encaisser énormément de clicks : chaque click est compté tout de suite, même à des milliers par seconde. Si ton appareil est lent, coupe les effets pour qu’il reste au maximum de sa vitesse.</p>
       </fieldset>
     </section>
 
     <!-- ===== Statistiques ===== -->
     <section class="card">
       <div class="card-head">
-        <h2>Statistiques</h2>
+        <h2 id="statsTitle">Statistiques</h2>
         <button id="resetBtn" class="btn btn-small">Réinitialiser</button>
       </div>
       <div class="kpis">
         <div class="kpi"><span class="kpi-value" id="testTotal">0</span><span class="kpi-label">tests</span></div>
-        <div class="kpi"><span class="kpi-value" id="bestCps">—</span><span class="kpi-label">meilleur /s</span></div>
-        <div class="kpi"><span class="kpi-value" id="avgCps">—</span><span class="kpi-label">moyenne /s</span></div>
-        <div class="kpi"><span class="kpi-value" id="clickTotal">0</span><span class="kpi-label">clicks au total</span></div>
+        <div class="kpi"><span class="kpi-value" id="bestCps">—</span><span class="kpi-label">meilleur CPS</span></div>
+        <div class="kpi"><span class="kpi-value" id="avgCps">—</span><span class="kpi-label">CPS moyen</span></div>
+        <div class="kpi"><span class="kpi-value" id="clickTotal">0</span><span class="kpi-label">réussis</span></div>
       </div>
 
       <h3 class="first-h3">Ta vitesse pendant le dernier test</h3>
@@ -149,23 +271,24 @@
       <div id="timelineAxis" class="timeline-axis hidden"><span>0 s</span><span id="axisEnd"></span></div>
       <p id="timelineInfo" class="muted small"></p>
 
-      <h3>Records par durée</h3>
+      <h3>Records de ce mode</h3>
       <div id="records" class="compare-table"></div>
 
       <details class="help">
         <summary>Comment lire ces statistiques ?</summary>
         <ul>
-          <li><strong>Tests</strong> : le nombre de tests terminés (un test arrêté avant la fin ne compte pas).</li>
-          <li><strong>Meilleur /s</strong> : ton meilleur nombre de clicks par seconde, toutes durées confondues.</li>
-          <li><strong>Moyenne /s</strong> : la moyenne de clicks par seconde sur tous tes tests.</li>
-          <li><strong>Dernier test</strong> : chaque barre montre ta vitesse pendant un petit morceau du test. La barre jaune est ton pic de vitesse. Sur un long test, on voit bien la fatigue arriver !</li>
-          <li><strong>Records</strong> : ton meilleur score pour chaque durée. Clique sur une ligne pour rejouer cette durée.</li>
-          <li><strong>Historique</strong> : tes clicks par seconde des derniers tests, du plus récent au plus ancien.</li>
+          <li>Ces chiffres sont ceux du <strong>mode choisi</strong> : change d’onglet pour voir les autres.</li>
+          <li><strong>Tests</strong> : les tests terminés (un test arrêté avant la fin ne compte pas).</li>
+          <li><strong>Meilleur CPS</strong> et <strong>CPS moyen</strong> : ta vitesse sur toute la durée de chaque test.</li>
+          <li><strong>Réussis</strong> : les clicks valables dans ce mode (sans les cibles ratées ni les erreurs d’alternance).</li>
+          <li><strong>Dernier test</strong> : chaque barre montre ta vitesse pendant un petit morceau du test. La barre jaune est ton pic. Sur un long test, on voit bien la fatigue arriver !</li>
+          <li><strong>Records</strong> : ton meilleur score pour chaque réglage. Clique sur une ligne pour remettre ce réglage.</li>
+          <li><strong>Réinitialiser</strong> efface les statistiques et les records de tous les modes, mais garde ton rang, tes succès et ton compteur.</li>
         </ul>
       </details>
 
       <h3>Historique</h3>
-      <div id="history" class="history"><span class="muted">Aucun test pour l’instant.</span></div>
+      <div id="history" class="history"></div>
     </section>
   </main>
 
@@ -179,7 +302,7 @@
     <h2>Partager &amp; sauvegarder</h2>
 
     <h3>🔗 Lien de ton test</h3>
-    <p class="muted small">Envoie ce lien à tes amis : en l’ouvrant, ils retrouvent exactement ta durée et tes réglages.</p>
+    <p class="muted small">Envoie ce lien à tes amis : en l’ouvrant, ils retrouvent exactement ton mode et tes réglages.</p>
     <label class="switch challenge-switch">
       <input id="challengeToggle" type="checkbox" checked>
       <span class="switch-track"><span class="switch-thumb"></span></span>
@@ -211,9 +334,11 @@
   <!-- Confirmation -->
   <dialog id="confirmDialog" class="dialog small">
     <h2>Effacer la sauvegarde ?</h2>
-    <p>Est-ce que vous voulez vraiment tout effacer ? Les réglages, les records, les statistiques et l’historique seront remis à zéro. Cette action est définitive.</p>
-    <form method="dialog" class="dialog-actions">
+    <p>Est-ce que vous voulez vraiment tout effacer ? Le compteur de clicks, le rang, les succès, les records, les statistiques et les réglages seront remis à zéro. Cette action est définitive.</p>
+    <p class="muted small">Vous pouvez aussi remettre seulement le compteur de clicks à zéro.</p>
+    <form method="dialog" class="dialog-actions wrap-actions">
       <button value="cancel" class="btn btn-small">Annuler</button>
+      <button value="counter" class="btn btn-small">Seulement le compteur</button>
       <button value="ok" class="btn btn-small btn-danger">Oui, tout effacer</button>
     </form>
   </dialog>
@@ -221,6 +346,7 @@
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
   <script src="js/sound.js"></script>
+  <script src="js/targets.js"></script>
   <script src="js/app.js"></script>
 </body>
 </html>

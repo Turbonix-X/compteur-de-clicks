@@ -1,6 +1,13 @@
 /* ===== Compteur de Clicks — styles propres au site (le reste est dans turbonix.css) ===== */
 
-/* ---------- La zone de clicks ---------- */
+/* ---------- Les modes ---------- */
+
+.mode-tabs { justify-content: center; margin-bottom: 8px; }
+.mode-tabs .tab { flex: 1 1 auto; justify-content: center; }
+.mode-tabs .tab:disabled { opacity: 0.55; cursor: not-allowed; }
+.mode-desc { text-align: center; margin-bottom: 12px; line-height: 1.45; }
+
+/* ---------- La zone de jeu ---------- */
 
 .click-zone {
   height: 360px;
@@ -18,6 +25,7 @@
 /* Pendant un test, plus de défilement ni de zoom quand on tape sur la zone */
 body.busy .click-zone { touch-action: none; cursor: crosshair; }
 .click-zone.armed { border-color: var(--yellow); }
+.click-zone.danger { border-color: #ff6b9a; }
 
 .hud {
   position: absolute;
@@ -48,26 +56,56 @@ body.busy .click-zone { touch-action: none; cursor: crosshair; }
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 6px;
+  gap: 14px;
   pointer-events: none;
-  padding: 60px 16px 30px;
+  padding: 50px 16px 22px;
   text-align: center;
 }
+
+/* Le gros bouton : tout le nombre tient dedans, quelle que soit sa longueur */
+.tap-btn {
+  width: 190px;
+  height: 190px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 28%, var(--mauve-light), var(--mauve) 42%, var(--mauve-dark));
+  border: 4px solid var(--yellow);
+  box-shadow: 0 8px 0 var(--mauve-deep), 0 0 34px rgba(155, 109, 255, 0.55);
+}
 .zone-count {
-  font-size: clamp(4rem, 14vw, 8rem);
+  font-size: min(4rem, calc(18rem / var(--len, 1)));
   font-weight: 900;
   line-height: 1;
   font-variant-numeric: tabular-nums;
-  letter-spacing: -2px;
-  text-shadow: 0 0 30px rgba(155, 109, 255, 0.7), 0 4px 0 rgba(0, 0, 0, 0.3);
-  max-width: 100%;
-  overflow-wrap: anywhere;
+  letter-spacing: -1px;
+  text-shadow: 0 3px 0 rgba(0, 0, 0, 0.28);
+  white-space: nowrap;
 }
-.zone-count.countdown { color: var(--yellow); text-shadow: 0 0 30px rgba(255, 214, 10, 0.7); }
+.zone-count.countdown { color: var(--yellow); text-shadow: 0 0 22px rgba(255, 214, 10, 0.7); }
+.tap-label { font-size: 0.72rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: #efeaff; margin-top: 2px; }
+/* Modes Cibles et Alternance : juste le nombre, sans le rond */
+.click-zone.plain .tap-btn { width: auto; height: auto; background: none; border: none; box-shadow: none; }
+.click-zone.plain .zone-count { font-size: min(3.4rem, calc(22rem / var(--len, 1))); }
 .zone-msg { font-weight: 700; font-size: 1.05rem; color: #e6e3f0; }
 .click-zone.armed .zone-msg { color: var(--yellow); }
+.click-zone.danger .zone-msg { color: #ff8fb3; }
 
-/* Barre de progression du temps, en bas de la zone */
+/* Le bouton tremble de plus en plus fort avec la vitesse */
+.click-zone.shaking .tap-btn,
+.click-zone.shaking .alt-row { animation: cc-tremble 0.11s linear infinite; }
+@keyframes cc-tremble {
+  0%, 100% { transform: translate(0, 0) rotate(0); }
+  20% { transform: translate(calc(var(--shake) * -1px), calc(var(--shake) * 0.6px)) rotate(calc(var(--shake) * -0.5deg)); }
+  40% { transform: translate(calc(var(--shake) * 0.9px), calc(var(--shake) * -0.8px)) rotate(calc(var(--shake) * 0.4deg)); }
+  60% { transform: translate(calc(var(--shake) * -0.7px), calc(var(--shake) * -0.5px)) rotate(calc(var(--shake) * -0.3deg)); }
+  80% { transform: translate(calc(var(--shake) * 0.8px), calc(var(--shake) * 0.9px)) rotate(calc(var(--shake) * 0.5deg)); }
+}
+
+/* Barre de progression en bas de la zone (jauge de vitesse en Endurance) */
 .zone-progress {
   position: absolute;
   left: 0;
@@ -84,6 +122,8 @@ body.busy .click-zone { touch-action: none; cursor: crosshair; }
   transform: scaleX(0);
   transform-origin: left;
 }
+.click-zone.mode-endurance .zone-progress { height: 12px; }
+.gauge-mark { position: absolute; left: 50%; top: -5px; bottom: 0; width: 3px; background: var(--white); box-shadow: 0 0 8px var(--white); }
 
 /* Onde à l'endroit du click */
 .click-ripple {
@@ -97,29 +137,169 @@ body.busy .click-zone { touch-action: none; cursor: crosshair; }
   opacity: 0;
 }
 .click-ripple.alt { border-color: var(--mauve-light); }
+.click-ripple.miss { border-color: #ff6b9a; }
 
+.click-zone .banner { width: max-content; max-width: 96%; text-align: center; }
 .click-zone .banner span { white-space: nowrap; }
 
-.duration-presets { justify-content: center; margin: 4px 0 18px; }
+.quick-presets { justify-content: center; margin: 4px 0 18px; }
 .divider h3 { margin-top: 0; }
+
+/* ---------- Mode Cibles ---------- */
+
+.click-zone.mode-targets { height: 460px; }
+.target-layer { position: absolute; inset: 0; pointer-events: none; }
+.target {
+  position: absolute;
+  left: 0;
+  top: 0;
+  border-radius: 50%;
+  background: radial-gradient(circle, #fff 0 13%, var(--yellow) 14% 38%, var(--mauve-dark) 39% 68%, var(--yellow) 69% 100%);
+  box-shadow: 0 0 16px rgba(255, 214, 10, 0.55), 0 3px 8px rgba(0, 0, 0, 0.45);
+  will-change: transform;
+}
+/* Le score reste visible, en discret, sous les cibles */
+body.playing .click-zone.mode-targets .tap-btn,
+body.playing .click-zone.mode-targets .zone-msg { opacity: 0.22; }
+
+/* ---------- Mode Alternance ---------- */
+
+.click-zone.mode-alt { height: 400px; }
+.alt-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 10px; max-width: 100%; }
+.alt-key {
+  min-width: 68px;
+  height: 68px;
+  padding: 0 10px;
+  display: grid;
+  place-items: center;
+  border-radius: 14px;
+  border: 2px solid rgba(255, 255, 255, 0.22);
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--white);
+  font-size: 1.3rem;
+  font-weight: 800;
+  box-shadow: 0 5px 0 rgba(0, 0, 0, 0.35);
+  transition: background 0.1s, border-color 0.1s, box-shadow 0.1s, color 0.1s;
+}
+button.alt-key { pointer-events: auto; cursor: pointer; touch-action: none; }
+.alt-key.next {
+  background: linear-gradient(135deg, var(--yellow-light), var(--yellow));
+  border-color: var(--ink);
+  color: var(--ink);
+  box-shadow: 0 5px 0 var(--mauve-dark), 0 0 22px rgba(255, 214, 10, 0.6);
+}
+.alt-key.wrong { border-color: #ff6b9a; animation: tx-shake 0.25s; }
+
+.alt-input { width: 260px; max-width: 100%; margin-bottom: 14px; }
+.field-title { font-weight: 600; font-size: 0.9rem; margin-bottom: 8px; }
+.key-list { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 8px; }
+.key-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 6px 4px 10px;
+  border-radius: 10px;
+  background: var(--surface-2);
+  border: 1.5px solid var(--border);
+  font-weight: 800;
+}
+.key-del {
+  width: 24px;
+  height: 24px;
+  border-radius: 7px;
+  border: 1px solid var(--border);
+  background: var(--surface-solid);
+  color: var(--muted);
+  font-size: 0.72rem;
+  transition: color 0.2s, border-color 0.2s;
+}
+.key-del:hover:not(:disabled) { color: #ff6b9a; border-color: #ff6b9a; }
+.key-del:disabled { opacity: 0.35; cursor: not-allowed; }
+.key-add.listening { border-color: var(--yellow); background: rgba(255, 214, 10, 0.14); }
+
+/* ---------- Rang et succès ---------- */
+
+.profile-grid { display: grid; grid-template-columns: auto 1fr auto; gap: 16px 24px; align-items: center; margin-bottom: 16px; }
+.rank-now { display: flex; align-items: center; gap: 14px; min-width: 0; }
+.rank-icon {
+  width: 76px;
+  height: 76px;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  border-radius: 20px;
+  font-size: 2.4rem;
+  background: linear-gradient(135deg, var(--mauve-deep), var(--ink));
+  border: 2px solid var(--yellow);
+  box-shadow: 0 0 22px rgba(255, 214, 10, 0.25);
+}
+.rank-text { display: flex; flex-direction: column; min-width: 0; }
+.rank-name { font-size: 1.6rem; font-weight: 900; letter-spacing: -0.5px; line-height: 1.15; }
+.rank-next { min-width: 0; font-size: 0.88rem; }
+.lifetime { min-width: 190px; padding: 12px 16px; }
+.lifetime .kpi-value { color: var(--mauve); font-size: 1.7rem; font-variant-numeric: tabular-nums; }
+.lifetime-note { font-size: 0.72rem; margin-top: 2px; }
+
+.rank-ladder { list-style: none; display: grid; grid-template-columns: repeat(10, 1fr); gap: 6px; }
+.rung {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  min-width: 0;
+  padding: 8px 2px;
+  border-radius: 12px;
+  background: var(--surface-2);
+  border: 1.5px solid var(--border);
+  text-align: center;
+  opacity: 0.5;
+  transition: opacity 0.3s, border-color 0.3s;
+}
+.rung.done { opacity: 1; }
+.rung.current { opacity: 1; border-color: var(--yellow); box-shadow: 0 0 14px rgba(255, 214, 10, 0.3); }
+.rung-icon { font-size: 1.3rem; line-height: 1.2; }
+.rung-name { font-size: 0.72rem; font-weight: 700; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rung-min { font-size: 0.68rem; color: var(--muted); white-space: nowrap; }
+
+.achievements { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+.achievement {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: var(--surface-2);
+  border: 1.5px solid var(--border);
+  transition: border-color 0.3s, box-shadow 0.3s;
+}
+.achievement-icon { font-size: 1.5rem; filter: grayscale(1); opacity: 0.45; }
+.achievement-text { display: flex; flex-direction: column; min-width: 0; }
+.achievement-text strong { font-weight: 800; }
+.achievement-text small { color: var(--muted); font-size: 0.75rem; }
+.achievement.won { border-color: var(--yellow); box-shadow: 0 0 14px rgba(255, 214, 10, 0.25); }
+.achievement.won .achievement-icon { filter: none; opacity: 1; }
 
 /* ---------- Réglages ---------- */
 
 .plain-set { border: none; min-width: 0; }
 .plain-set:disabled { opacity: 0.6; }
+.panel { min-width: 0; }
+.slider-field { margin-bottom: 14px; }
+.slider-row { display: flex; align-items: center; gap: 12px; }
+.slider-row .range { flex: 1; min-width: 0; }
+.field input.mini-input { width: 84px; flex-shrink: 0; padding: 7px 9px; text-align: right; }
+#panelEndurance .info { margin: 12px 0 0; }
 .duration-row { align-items: center; }
 .unit-input { position: relative; display: block; }
-.unit-input input {
-  width: 92px;
-  padding: 10px 40px 10px 12px;
-  border: 1.5px solid var(--border);
-  border-radius: 12px;
-  background: var(--surface-2);
-  font-weight: 700;
-  font-size: 1rem;
+.field .unit-input input[type="number"] {
+  width: 100px;
+  padding: 10px 44px 10px 8px;
   text-align: right;
-  transition: border-color 0.2s, box-shadow 0.2s;
+  appearance: textfield;
+  -moz-appearance: textfield;
 }
+.field .unit-input input[type="number"]::-webkit-inner-spin-button { display: none; }
 .unit-input input.invalid { border-color: var(--error); animation: tx-shake 0.3s; }
 .unit-input span {
   position: absolute;
@@ -135,7 +315,7 @@ body.busy .click-zone { touch-action: none; cursor: crosshair; }
 #durationText strong { color: var(--text); }
 .start-mode { width: 320px; max-width: 100%; margin-bottom: 12px; }
 .start-info { margin-bottom: 0; }
-.options { display: flex; flex-direction: column; gap: 12px; margin-bottom: 16px; }
+.options { display: flex; flex-direction: column; gap: 12px; }
 .options .switch { font-weight: 600; }
 
 /* ---------- Statistiques ---------- */
@@ -153,7 +333,7 @@ body.busy .click-zone { touch-action: none; cursor: crosshair; }
   background: var(--surface-2);
   border: 1px solid var(--border);
 }
-.timeline.empty { align-items: center; justify-content: center; font-size: 0.85rem; color: var(--muted); }
+.timeline.empty { align-items: center; justify-content: center; font-size: 0.85rem; color: var(--muted); text-align: center; }
 .tl-bar {
   flex: 1;
   min-width: 0;
@@ -177,19 +357,32 @@ body.busy .click-zone { touch-action: none; cursor: crosshair; }
 .file-btn { display: inline-flex; align-items: center; cursor: pointer; }
 .dialog .field-row { margin-bottom: 6px; }
 .challenge-switch { margin: 4px 0 12px; font-weight: 600; }
+.wrap-actions { flex-wrap: wrap; }
 
 /* ---------- Tablette et téléphone ---------- */
+
+@media (max-width: 899px) {
+  .profile-grid { grid-template-columns: 1fr; }
+  .lifetime { width: 100%; }
+  .achievements { grid-template-columns: repeat(2, 1fr); }
+  .rank-ladder { grid-template-columns: repeat(5, 1fr); }
+}
 
 @media (max-width: 560px) {
   /* Le titre passe sur 2 lignes pour laisser toute la place aux boutons et au logo */
   .site-title { white-space: normal; line-height: 1.1; min-width: 0; }
   .header-right { flex-shrink: 0; }
-  .click-zone { height: 320px; }
+  .click-zone { height: 330px; }
+  .click-zone.mode-targets { height: 420px; }
+  .click-zone.mode-alt { height: 390px; }
   .hud { top: 12px; left: 14px; right: 14px; }
   .hud-value { font-size: 1.3rem; }
-  .unit-input input { width: 84px; }
-  .start-mode { width: 100%; }
-  .click-zone .banner span { white-space: nowrap; }
-
-.duration-presets { justify-content: flex-start; }
+  .tap-btn { width: 164px; height: 164px; }
+  .zone-count { font-size: min(3.4rem, calc(15rem / var(--len, 1))); }
+  .alt-key { min-width: 62px; height: 62px; }
+  .field .unit-input input[type="number"] { width: 80px; padding: 10px 36px 10px 4px; }
+  .unit-input span { right: 8px; }
+  .start-mode, .alt-input { width: 100%; }
+  .quick-presets { justify-content: flex-start; }
+  .wrap-actions .btn { flex: 1 1 100%; }
 }
