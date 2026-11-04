@@ -1,5 +1,7 @@
 # Compteur de Clicks
 
+**A NOTER:** Ce site est fait à 100% par Intelligence Artifficielle (ou Super Intelligence pour les intimes).
+
 Un site pour tester ta vitesse de clicks directement dans le navigateur, avec 5 modes de jeu, des rangs et des succès.
 
 **Jouer en ligne : https://turbonix-x.github.io/compteur-de-clicks/**
